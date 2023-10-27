@@ -1,5 +1,16 @@
-import React, {useState, useEffect} from 'react';
+import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import './RecipeSearch.css';
+import { Bar } from 'react-chartjs-2';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title
+} from 'chart.js';
+
+ChartJS.register(CategoryScale, BarElement, LinearScale, Title);
 
 function RecipeSearch() {
   const [meals, setMeals] = useState(null); 
@@ -14,7 +25,7 @@ function RecipeSearch() {
   const apiKey = '1';
 
   const fetchByFirstLetter = async () => {
-    const alphabet = "abcdefghijklmnopqrstuvwxyz".split("");
+    const alphabet = "abcdefghijklmnopqrstuvwy".split("");
     let allMealsByLetter = [];
 
     for (let letter of alphabet) {
@@ -43,6 +54,7 @@ function RecipeSearch() {
     }
     return count;
   }
+  
 
   useEffect(() => {
     const fetchAreas = async () => {
@@ -58,6 +70,8 @@ function RecipeSearch() {
     fetchAreas();
 
   }, []);
+
+ 
   useEffect(() => { 
     const fetchCategories = async () => {
         try {
@@ -117,6 +131,53 @@ const filteredMeals = meals?.filter(meal =>
 
 
   const ingredientCounts = filteredMeals?.map(meal => countIngredients(meal));
+
+  const categoriesCount = categories.map(cat => {
+    return {
+        label: cat.strCategory,
+        count: filteredMeals.filter(meal => meal.strCategory === cat.strCategory).length
+    };
+});
+
+const chartData = {
+    labels: categoriesCount.map(cat => cat.label),
+    datasets: [{
+        label: 'Number of Recipes per Category',
+        data: categoriesCount.map(cat => cat.count),
+        backgroundColor: '#667558'
+        
+    }]
+};
+
+const options = {
+  scales: {
+    x: {
+      ticks: {
+        font: {
+          family: 'Raleway' 
+        }
+      }
+    },
+    y: {
+      ticks: {
+        font: {
+          family: 'Raleway' 
+        }
+      }
+    }
+  },
+  plugins: {
+    tooltip: {
+      titleFont: {
+        family: 'Raleway' 
+      },
+      bodyFont: {
+        family: 'Raleway' 
+      }
+    }
+  }
+};
+
   return (
     <div>
     <div className="search-controls">
@@ -132,7 +193,7 @@ const filteredMeals = meals?.filter(meal =>
                 {categories.map(cat => <option key={cat.strCategory} value={cat.strCategory}>{cat.strCategory}</option>)}
         </select>
         <div className = "areas-wrapper">
-        <label htmlFor="areaSelect">Areas:</label>
+        <label htmlFor="areaSelect">Cuisines:</label>
         <select id = "areaSelect" multiple value = {selectedAreas} onChange={(e) => {
             const selectedOptions = Array.from(e.target.selectedOptions).map(option => option.value);
             setSelectedAreas(selectedOptions);
@@ -143,6 +204,10 @@ const filteredMeals = meals?.filter(meal =>
         <button onClick={() => setSelectedAreas([])}>Unselect All</button>
         </div>
     </div>
+    <div className="chart-container">
+      <h3>Number of Recipes per Category</h3>
+        <Bar data={chartData} />
+      </div>
        <div>
         Total # of Meals: {meals?.length} <br/>
         Displaying: {filteredMeals?.length} meals <br/>
@@ -160,6 +225,7 @@ const filteredMeals = meals?.filter(meal =>
             <th>Category</th>
             <th>Area</th>
             <th>No. of Ingredients</th>
+            <th>More details</th>
             
             </tr>
             </thead>
@@ -173,6 +239,7 @@ const filteredMeals = meals?.filter(meal =>
                     <td>{meal.strCategory}</td>
                     <td>{meal.strArea}</td>
                     <td>{countIngredients(meal)}</td>
+                    <td> <Link to={`/meal/${meal.idMeal}`}>Details</Link></td>
                 </tr>
             ))}
         </tbody>
